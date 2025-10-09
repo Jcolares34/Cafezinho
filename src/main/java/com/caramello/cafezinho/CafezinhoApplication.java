@@ -1,5 +1,10 @@
 package com.caramello.cafezinho;
 
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import com.caramello.cafezinho.model.Cliente;
 import com.caramello.cafezinho.model.Item;
 import com.caramello.cafezinho.model.Pedido;
@@ -9,7 +14,24 @@ import com.caramello.cafezinho.repository.PedidoRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Bean;
+
+@Configuration
+class CorsConfig {
+
+    @Bean
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**") // Permite todas as rotas
+                        .allowedOrigins("http://localhost:3000") // Permite o frontend
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Métodos permitidos
+                        .allowedHeaders("*") // Permite todos os cabeçalhos
+                        .allowCredentials(true); // Permite envio de cookies
+            }
+        };
+    }
+}
 
 @SpringBootApplication
 public class CafezinhoApplication {
@@ -53,13 +75,31 @@ public class CafezinhoApplication {
 
             // ---------- CLIENTES (cria ou atualiza) ----------
             Cliente cliente1 = clienteRepo.findByEmail("jco@email.com")
-                    .orElse(new Cliente("Julia Colares", "jco@email.com", "123456"));
+                    .orElseGet(() -> {
+                        Cliente c = new Cliente();
+                        c.setNomeUsuario("JuliaColares");
+                        c.setEmail("jco@email.com");
+                        c.setSenha("123456");
+                        c.setReceberNovidades(false);
+                        return c;
+                    });
             cliente1.setSenha("123456");
+            cliente1.setNomeUsuario("JuliaColares");
+            cliente1.setReceberNovidades(false);
             clienteRepo.save(cliente1);
 
             Cliente cliente2 = clienteRepo.findByEmail("admin@email.com")
-                    .orElse(new Cliente("Admin", "admin@email.com", "admin"));
+                    .orElseGet(() -> {
+                        Cliente c = new Cliente();
+                        c.setNomeUsuario("Admin");
+                        c.setEmail("admin@email.com");
+                        c.setSenha("admin");
+                        c.setReceberNovidades(false);
+                        return c;
+                    });
             cliente2.setSenha("admin");
+            cliente2.setNomeUsuario("Admin");
+            cliente2.setReceberNovidades(false);
             clienteRepo.save(cliente2);
 
             System.out.println("Clientes criados ou atualizados!");
