@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -40,7 +41,7 @@ public class AuthController {
         }
         System.out.println("Payload recebido: " + payload);
         System.out.println("Valor de receberNovidades: " + receberNovidades);
-        System.out.println("Tipo de receberNovidades: " + (receberNovidades != null ? receberNovidades.getClass() : "null"));
+        System.out.println("Tipo de receberNovidades: " + receberNovidades.getClass().getName());
         Cliente cliente = new Cliente();
         cliente.setEmail(email);
         cliente.setNomeUsuario(nomeUsuario);
@@ -54,11 +55,22 @@ public class AuthController {
     // Login de usuário
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Cliente loginData) {
-        Optional<Cliente> cliente = clienteRepository.findByEmail(loginData.getEmail());
-        if (cliente.isEmpty() || !cliente.get().getSenha().equals(loginData.getSenha())) {
-            return ResponseEntity.status(401).body("Email ou senha inválidos.");
+        System.out.println("Login attempt recebido para o email: " + loginData.getEmail());
+        Optional<Cliente> clienteOpt = clienteRepository.findByEmail(loginData.getEmail());
+        if (clienteOpt.isEmpty() || !clienteOpt.get().getSenha().equals(loginData.getSenha())) {
+            return ResponseEntity.status(401).body(Map.of("error", "Email ou senha inválidos."));
         }
-        String token = JwtUtil.generateToken(loginData.getEmail());
-        return ResponseEntity.ok().body("{\"token\": \"" + token + "\"}");
+        Cliente cliente = clienteOpt.get();
+        String token = JwtUtil.generateToken(cliente.getEmail());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", token);
+        response.put("email", cliente.getEmail());
+        response.put("nomeUsuario", cliente.getNomeUsuario());
+
+        // Registra o mapa de resposta para que possamos confirmar que o backend retorna os três campos
+        System.out.println("Resposta do login: " + response);
+
+        return ResponseEntity.ok(response);
     }
 }
